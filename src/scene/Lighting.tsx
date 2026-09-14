@@ -1,0 +1,100 @@
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import type { DirectionalLight, AmbientLight } from 'three'
+import { sunVector } from '../lib/sun'
+import type { Mood, Weather } from '../types'
+
+interface LightningState {
+  next: number
+  value: number
+  burst: number
+}
+
+// Storms get a flash instead of a rendered bolt: cheap, and it reads correctly
+// because what you notice in a real storm is the room lighting up, not the bolt.
+function useLightning(active: boolean): LightningState {
+  const state = useRef<LightningState>({ next: 2 + Math.random() * 5, value: 0, burst: 0 })
+
+  useFrame((_, delta) => {
+    const current = state.current
+    if (!active) {
+      current.value = 0
+      return
+    }
+
+    current.next -= delta
+    if (current.next <= 0) {
+      current.burst = 0.18 + Math.random() * 0.12
+      current.next = 3 + Math.random() * 9
+    }
+
+    if (current.burst > 0) {
+      current.burst -= delta
+      // Double-strike: the flicker inside the flash is what sells it.
+      current.value = current.burst > 0 ? (Math.random() > 0.35 ? 1 : 0.25) : 0
+    } else {
+      current.value = 0
+    }
+  })
+
+  return state.current
+}
+
+export interface LightingProps {
+  mood: Mood
+  weather: Weather | null
+  when: Date
+  latitude: number
+  longitude: number
+}
+
+export function Lighting({ mood, weather, when, latitude, longitude }: LightingProps) {
+  const sun = useMemo(() => sunVector(when, latitude, longitude, 26), [when, latitude, longitude])
+
+  const key = useRef<DirectionalLight>(null)
+  const fill = useRef<AmbientLight>(null)
+  const bolt = useRef<DirectionalLight>(null)
+  const lightning = useLightning(weather?.kind === 'storm')
+
+  // Thick cloud both dims the sun and spreads it, so the key light drops while
+  // the ambient fill climbs.
+  const cover = weather?.cloudCover ?? 0
+  const keyIntensity = mood.sunIntensity * (1 - cover * 0.55)
+  const fillIntensity = mood.ambientIntensity * (1 + cover * 0.35)
+
+  useFrame(() => {
+    if (bolt.current) bolt.current.intensity = lightning.value * 6
+    if (key.current) key.current.intensity = keyIntensity + lightning.value * 1.5
+    if (fill.current) fill.current.intensity = fillIntensity
+  })
+
+  // Below the horizon the sun would light the scene from underneath, so it is
+  // parked just above it and dimmed by the night mood instead.
+  const elevated = Math.max(sun.position[1], 6)
+
+  return (
+    <>
+      <ambientLight ref={fill} color={mood.ambient} intensity={fillIntensity} />
+      <hemisphereLight args={[mood.top, mood.bottom, 0.3]} />
+      <directionalLight
+        ref={key}
+        color={mood.sun}
+        intensity={keyIntensity}
+        position={[sun.position[0], elevated, sun.position[2]]}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0006}
+        shadow-normalBias={0.05}
+        shadow-camera-left={-12}
+        shadow-camera-right={12}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-12}
+        shadow-camera-near={0.5}
+        shadow-camera-far={70}
+      />
+      <directionalLight ref={bolt} color="#dfe6ff" intensity={0} position={[6, 16, 10]} />
+      {/* Cool rim from the opposite side keeps the cutaway edges readable. */}
+      <directionalLight color={mood.top} intensity={0.28} position={[-9, 5, -8]} />
+    </>
+  )
+}
