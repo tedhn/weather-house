@@ -9,6 +9,8 @@ import {
 } from './ui/WeatherSwitcher'
 import { moodFor } from './lib/palette'
 import { useInitialLocation, useWeather } from './hooks/useWeather'
+import { useHermes } from './hooks/useHermes'
+import { affordancesFor } from './scene/affordances'
 import './index.css'
 
 export default function App() {
@@ -18,6 +20,9 @@ export default function App() {
   const [override, setOverride] = useState<Override>(() => overrideFromUrl(window.location.search))
   const weather = useMemo(() => applyOverride(live, override), [live, override])
   const mood = useMemo(() => moodFor(weather), [weather])
+
+  const hermes = useHermes()
+  const affordances = useMemo(() => affordancesFor(hermes), [hermes])
 
   // The sun angle only needs a fresh clock once a minute.
   const [now, setNow] = useState(() => new Date())
@@ -29,7 +34,7 @@ export default function App() {
   return (
     <div className="app">
       <div className="sky" style={{ background: `linear-gradient(${mood.top}, ${mood.bottom})` }} />
-      <Scene weather={weather} location={location} when={now} mood={mood} />
+      <Scene weather={weather} location={location} when={now} mood={mood} affordances={affordances} />
       <div className="vignette" />
       <Hud
         weather={weather}
@@ -38,6 +43,7 @@ export default function App() {
         loading={loading}
         onPick={setLocation}
         onRefresh={refresh}
+        hermes={hermes}
       />
       {import.meta.env.DEV && <WeatherSwitcher value={override} onChange={setOverride} />}
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { searchPlaces } from '../lib/openMeteo'
 import type { Coordinates, Place, Weather } from '../types'
+import type { HermesReport } from '../lib/hermes'
 
 function localClock(weather: Weather | null): string {
   if (!weather) return '--:--'
@@ -84,6 +85,20 @@ function LocationSearch({ onPick }: { onPick: (place: Place) => void }) {
   )
 }
 
+function HermesLine({ report }: { report: HermesReport }) {
+  const { mail_pending, job_matches_today, watch_hits, digest_posted } = report.signals
+
+  const parts = [
+    mail_pending === undefined ? null : `${mail_pending} waiting`,
+    job_matches_today === undefined ? null : `${job_matches_today} scored`,
+    watch_hits ? `${watch_hits} watch hits` : null,
+    digest_posted ? 'digest sent' : null,
+  ].filter(Boolean)
+
+  if (!parts.length) return null
+  return <p className="hermes">hermes · {parts.join(' · ')}</p>
+}
+
 export interface HudProps {
   weather: Weather | null
   location: Coordinates | null
@@ -91,9 +106,10 @@ export interface HudProps {
   loading: boolean
   onPick: (place: Place) => void
   onRefresh: () => void
+  hermes: HermesReport | null
 }
 
-export function Hud({ weather, location, error, loading, onPick, onRefresh }: HudProps) {
+export function Hud({ weather, location, error, loading, onPick, onRefresh, hermes }: HudProps) {
   return (
     <div className="hud">
       <div className="hud-corner top-left">
@@ -137,6 +153,7 @@ export function Hud({ weather, location, error, loading, onPick, onRefresh }: Hu
           </dl>
         )}
         {error && <p className="error">Weather unavailable — {error.message}</p>}
+        {hermes && <HermesLine report={hermes} />}
       </div>
 
       <div className="hud-corner bottom-right">

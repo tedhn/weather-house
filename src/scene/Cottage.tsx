@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { COTTAGE } from '../lib/palette'
 import type { Mood } from '../types'
+import { UNCONNECTED, type Affordances } from './affordances'
 import { Panel } from './Panel'
 import { Interior } from './Furniture'
 import { W, D, WALL, ROOM_H, ROOF_RISE, HALF_W, HALF_D, WALL_TOP, BASE_Y } from './dims'
@@ -177,9 +178,16 @@ export interface CottageProps {
   mood: Mood
   snowCover?: number
   smoke?: boolean
+  /** What the room shows about the Hermes pipelines. Defaults to unconnected. */
+  affordances?: Affordances
 }
 
-export function Cottage({ mood, snowCover = 0, smoke = true }: CottageProps) {
+export function Cottage({
+  mood,
+  snowCover = 0,
+  smoke = true,
+  affordances = UNCONNECTED,
+}: CottageProps) {
   const nightGlow = mood.phase === 'night'
 
   return (
@@ -217,7 +225,7 @@ export function Cottage({ mood, snowCover = 0, smoke = true }: CottageProps) {
       <Roof />
       <Chimney smoke={smoke} />
 
-      <Interior nightGlow={nightGlow} />
+      <Interior nightGlow={nightGlow} affordances={affordances} />
     </group>
   )
 }

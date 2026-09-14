@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Coordinates, Mood, Weather } from '../types'
+import type { Affordances } from './affordances'
 import { auditZFight } from '../dev/auditZFight'
 import { CottageModel } from './BlenderCottage'
 import { Lighting } from './Lighting'
@@ -79,10 +80,11 @@ export interface SceneProps {
   location: Coordinates | null
   when: Date
   mood: Mood
+  affordances: Affordances
   drift?: boolean
 }
 
-export function Scene({ weather, location, when, mood, drift = true }: SceneProps) {
+export function Scene({ weather, location, when, mood, affordances, drift = true }: SceneProps) {
   // Snow settles on the platform in proportion to how hard it is coming down.
   const snowCover = weather?.kind === 'snow' ? Math.min(1, 0.35 + weather.intensity * 0.6) : 0
 
@@ -111,6 +113,7 @@ export function Scene({ weather, location, when, mood, drift = true }: SceneProp
       <Drift enabled={drift}>
         <CottageModel
           mood={mood}
+          affordances={affordances}
           snowCover={snowCover}
           smoke={weather ? weather.temperature < 22 : true}
         />

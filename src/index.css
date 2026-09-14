@@ -166,6 +166,13 @@ dd {
   font-variant-numeric: tabular-nums;
 }
 
+.hermes {
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
 .error {
   margin: 10px 0 0;
   font-size: 0.8rem;
