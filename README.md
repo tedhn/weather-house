@@ -56,32 +56,6 @@ http://localhost:5173/?preview=snow&intensity=0.9&night
 `preview` takes `clear`, `cloudy`, `overcast`, `fog`, `rain`, `snow` or
 `storm`. `intensity` is `0`–`1`. `night` forces the dark palette.
 
-## Hermes signals
-
-The room can also show what the [Hermes](AGENTS.md) pipelines have done today:
-the floor lamp lights while mail is waiting, sheets stack on the desk for each
-job scored, and the hearth burns full once the digest has gone out.
-
-The link is a store, not a server. `scripts/signals.mjs` reads the other
-pipelines' run output — all read-only — and writes `public/hermes.json`, which
-the page fetches and re-reads every minute.
-
-```bash
-node scripts/signals.mjs collect
-```
-
-To keep it current, copy `com.ted.cottage-signals.plist` into
-`~/Library/LaunchAgents/` and load it:
-
-```bash
-launchctl load ~/Library/LaunchAgents/com.ted.cottage-signals.plist
-```
-
-None of this is required. With no signals file the room renders exactly as it
-does without Hermes — every lamp on, fire burning — and the same is true if the
-file goes stale, so a dead scheduler shows nothing rather than yesterday's news.
-See [AGENTS.md](AGENTS.md) for the stage contract and the signal-to-room map.
-
 ## Using a Blender model instead
 
 The cottage in `src/scene/` is procedural so the project runs with no assets.
@@ -114,8 +88,6 @@ src/
   types.ts                domain types: Weather, Condition, Mood, Place
   lib/openMeteo.ts        API client, WMO code table
   lib/reverseGeocode.ts   coordinates -> city name, with an offline fallback
-  lib/hermes.ts           reads public/hermes.json, ignores it when stale
-  scene/affordances.ts    the one place a signal maps to something visible
   lib/sun.ts              solar azimuth and altitude
   lib/palette.ts          fixed cottage colours, per-condition light moods
   hooks/useWeather.ts     fetching, refresh timer, geolocation

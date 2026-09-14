@@ -25,9 +25,3 @@ dist-ssr
 
 # TypeScript incremental build state
 *.tsbuildinfo
-
-# Written by scripts/signals.mjs, refreshed on a schedule
-public/hermes.json
-
-# Scheduler log
-runs/

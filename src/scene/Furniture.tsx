@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber'
 import type { Mesh, PointLight } from 'three'
 import { COTTAGE } from '../lib/palette'
 import { Panel, type Vec3 } from './Panel'
-import type { Affordances } from './affordances'
 import { HALF_D, HALF_W } from './dims'
 
 const FLOOR_Y = 0.14
@@ -76,7 +75,7 @@ function Bookshelf({ position, rotation = [0, 0, 0], height = 1.7, width = 1.3 }
   )
 }
 
-function Fireplace({ nightGlow, hearth }: { nightGlow: boolean; hearth: Affordances['hearth'] }) {
+function Fireplace({ nightGlow }: { nightGlow: boolean }) {
   const flame = useRef<Mesh>(null)
   const light = useRef<PointLight>(null)
 
@@ -85,12 +84,8 @@ function Fireplace({ nightGlow, hearth }: { nightGlow: boolean; hearth: Affordan
   useFrame((state) => {
     const time = state.clock.elapsedTime
     const flicker = 0.82 + Math.sin(time * 11) * 0.09 + Math.sin(time * 23.3) * 0.06
-    const banked = hearth === 'embers'
-    const height = banked ? 0.3 : 0.8 + flicker * 0.35
-    if (flame.current) flame.current.scale.set(flicker * (banked ? 0.7 : 1), height, flicker * (banked ? 0.7 : 1))
-    if (light.current) {
-      light.current.intensity = (nightGlow ? 5.5 : 3.4) * flicker * (banked ? 0.4 : 1)
-    }
+    if (flame.current) flame.current.scale.set(flicker, 0.8 + flicker * 0.35, flicker)
+    if (light.current) light.current.intensity = (nightGlow ? 5.5 : 3.4) * flicker
   })
 
   return (
@@ -109,7 +104,7 @@ function Fireplace({ nightGlow, hearth }: { nightGlow: boolean; hearth: Affordan
         <meshStandardMaterial
           color={COTTAGE.ember}
           emissive={COTTAGE.ember}
-          emissiveIntensity={hearth === 'embers' ? 1.4 : 2.6}
+          emissiveIntensity={2.6}
           flatShading
           toneMapped={false}
         />
@@ -146,7 +141,7 @@ const CHAIR_LEGS: [number, number][] = [
   [0.2, 0.18],
 ]
 
-function Desk({ nightGlow, papers }: { nightGlow: boolean; papers: number }) {
+function Desk({ nightGlow }: { nightGlow: boolean }) {
   return (
     <group position={[1.3, FLOOR_Y, -HALF_D + 0.62]}>
       <Panel size={[1.7, 0.09, 0.72]} position={[0, 0.78, 0]} color={COTTAGE.wood} />
@@ -181,14 +176,7 @@ function Desk({ nightGlow, papers }: { nightGlow: boolean; papers: number }) {
         <cylinderGeometry args={[0.09, 0.08, 0.16, 10]} />
         <meshStandardMaterial color={COTTAGE.fabric} flatShading />
       </mesh>
-      {Array.from({ length: papers }, (_, sheet) => (
-        <Panel
-          key={sheet}
-          size={[0.3, 0.045, 0.22]}
-          position={[0.62 + sheet * 0.012, 0.87 + sheet * 0.05, -0.16 - sheet * 0.008]}
-          color={COTTAGE.paper}
-        />
-      ))}
+      <Panel size={[0.3, 0.05, 0.22]} position={[0.62, 0.87, -0.16]} color={COTTAGE.paper} />
 
       {/* Chair, pulled out slightly. */}
       <group position={[-0.15, 0, 0.8]} rotation={[0, 0.22, 0]}>
@@ -202,7 +190,7 @@ function Desk({ nightGlow, papers }: { nightGlow: boolean; papers: number }) {
   )
 }
 
-function FloorLamp({ position, nightGlow, on }: Placed & { nightGlow: boolean; on: boolean }) {
+function FloorLamp({ position, nightGlow }: Placed & { nightGlow: boolean }) {
   return (
     <group position={position}>
       <Panel size={[0.3, 0.06, 0.3]} position={[0, 0.03, 0]} color={COTTAGE.metal} />
@@ -210,22 +198,20 @@ function FloorLamp({ position, nightGlow, on }: Placed & { nightGlow: boolean; o
       <mesh position={[0, 1.62, 0]} castShadow>
         <coneGeometry args={[0.22, 0.3, 8, 1, true]} />
         <meshStandardMaterial
-          color={on ? COTTAGE.lampLight : COTTAGE.paper}
+          color={COTTAGE.lampLight}
           emissive={COTTAGE.lampLight}
-          emissiveIntensity={on ? (nightGlow ? 1.4 : 0.6) : 0}
+          emissiveIntensity={nightGlow ? 1.4 : 0.6}
           side={2}
           flatShading
         />
       </mesh>
-      {on && (
-        <pointLight
-          position={[0, 1.5, 0]}
-          color={COTTAGE.lampLight}
-          intensity={nightGlow ? 4 : 1.8}
-          distance={4.5}
-          decay={2}
-        />
-      )}
+      <pointLight
+        position={[0, 1.5, 0]}
+        color={COTTAGE.lampLight}
+        intensity={nightGlow ? 4 : 1.8}
+        distance={4.5}
+        decay={2}
+      />
     </group>
   )
 }
@@ -269,24 +255,18 @@ function Nightstand({ nightGlow }: { nightGlow: boolean }) {
   )
 }
 
-export function Interior({
-  nightGlow,
-  affordances,
-}: {
-  nightGlow: boolean
-  affordances: Affordances
-}) {
+export function Interior({ nightGlow }: { nightGlow: boolean }) {
   return (
     <group>
       <Rug position={[0.45, FLOOR_Y + 0.05, 0.85]} color={COTTAGE.fabric} size={[2.2, 1.7]} />
-      <Fireplace nightGlow={nightGlow} hearth={affordances.hearth} />
+      <Fireplace nightGlow={nightGlow} />
       <Bed />
       <Nightstand nightGlow={nightGlow} />
-      <Desk nightGlow={nightGlow} papers={affordances.papers} />
+      <Desk nightGlow={nightGlow} />
       {/* Turned to face +Z so the spines read; anything facing away shows a
           blank back panel to this camera. */}
       <Bookshelf position={[-1.35, FLOOR_Y, -HALF_D + 0.25]} height={1.5} />
-      <FloorLamp position={[1.9, FLOOR_Y, 1.8]} nightGlow={nightGlow} on={affordances.floorLamp} />
+      <FloorLamp position={[1.9, FLOOR_Y, 1.8]} nightGlow={nightGlow} />
       <Plant position={[1.9, FLOOR_Y, 0.35]} scale={1.15} />
       <Plant position={[-0.35, FLOOR_Y, 1.85]} scale={0.95} />
     </group>
