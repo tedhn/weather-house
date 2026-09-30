@@ -50,6 +50,8 @@ body,
 .hud {
   position: absolute;
   inset: 0;
+  /* Above the hotspots, which drei stamps with a z-index of its own. */
+  z-index: 20;
   pointer-events: none;
   color: var(--ink);
   padding: clamp(16px, 3vw, 34px);
@@ -72,6 +74,13 @@ body,
   grid-column: 2;
   grid-row: 1;
   text-align: right;
+}
+
+.mid-right {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
 }
 
 .bottom-left {
@@ -265,6 +274,52 @@ dd {
   color: var(--ink-soft);
 }
 
+.zoom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  backdrop-filter: blur(10px);
+}
+
+.zoom-button {
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.zoom-button:hover:not(:disabled) {
+  background: rgba(52, 34, 64, 0.8);
+  border-color: rgba(243, 232, 239, 0.32);
+}
+
+.zoom-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.zoom-level {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
 /* Dev-only condition switcher. Sits on the left edge, clear of the HUD corners. */
 .switcher {
   position: absolute;
@@ -283,12 +338,33 @@ dd {
   z-index: 3;
 }
 
+/* Collapsed, the panel is nothing but its own title, which is the button that
+   opens it again. */
+.switcher:not(.is-open) {
+  width: auto;
+}
+
+.switcher:not(.is-open) > :not(.switcher-title) {
+  display: none;
+}
+
 .switcher-title {
+  font: inherit;
+  cursor: pointer;
   margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
   font-size: 0.62rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--ink-soft);
+}
+
+.switcher-title strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .switcher-group {
@@ -344,12 +420,42 @@ dd {
   opacity: 0.35;
 }
 
+/* PHONE_MAX_WIDTH (src/scene/screen.ts) reads this same 620px, so the desk
+   swaps to the phone at exactly the width the rest of the page reflows for --
+   a phone-shaped device never turns up next to HUD chrome still laid out for
+   a desktop, or the other way round. */
 @media (max-width: 620px) {
+  /* Collapsed, the panel parks in the bottom-right corner, which the HUD
+     leaves empty once its footer rows go full width. Open, it is a sheet along
+     the bottom edge: the one band a phone can spare without covering the
+     diorama. */
   .switcher {
+    left: auto;
+    right: 12px;
     top: auto;
-    bottom: 50%;
+    bottom: 14px;
     transform: none;
-    width: 150px;
+    width: auto;
+    /* 44px of thumb, same floor as the hotspots. */
+    padding: 0 16px;
+    min-height: 44px;
+    justify-content: center;
+    border-radius: 999px;
+  }
+
+  /* The sheet lands on the band the HUD footer already holds, so it has to
+     out-rank the HUD (z-index 20) and cover it outright -- a translucent panel
+     over live readings reads as two overlapping screens. */
+  .switcher.is-open {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+    background: rgba(22, 14, 30, 0.94);
+    z-index: 25;
   }
 
   .hud {
@@ -372,4 +478,627 @@ dd {
   dl {
     gap: 16px;
   }
+
+  /* Inside a close-up the phone's glass fills the viewport, so the exit chip
+     has to land on the home screen somewhere. Centred it sits on the app grid,
+     which fills the top half; dropped to here it lands in the band between the
+     last row of apps and the dock, which is the one part of an iOS home screen
+     that is meant to be empty. */
+  .hud.is-inside .mid-right {
+    align-self: end;
+    margin-bottom: 12vh;
+  }
+}
+
+/* Hotspots. The diorama is a still picture until one of these says otherwise,
+   and on a phone there is no hover to discover the affordance with. The dot is
+   small but the button around it is 44px, because the laptop it points at is
+   barely fifty pixels wide on screen. */
+.hotspot {
+  position: relative;
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 16px;
+  background: none;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: inherit;
+  transition: opacity 320ms ease;
+}
+
+.hotspot.is-stowed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hotspot-dot {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(243, 232, 239, 0.92);
+  box-shadow: 0 0 0 1px rgba(16, 9, 24, 0.5), 0 0 12px rgba(243, 232, 239, 0.45);
+  transition: transform 180ms ease;
+}
+
+.hotspot:hover .hotspot-dot,
+.hotspot:focus-visible .hotspot-dot {
+  transform: scale(1.25);
+}
+
+/* The ring is what catches the eye across the room. It reads as a beacon rather
+   than a UI element, which is the only reason a pip is tolerable on top of the
+   art. */
+.hotspot-dot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 232, 239, 0.75);
+  animation: hotspot-pulse 2.8s ease-out infinite;
+}
+
+@keyframes hotspot-pulse {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.85;
+  }
+  70%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* Absolute so revealing the label does not shove the dot off the thing it is
+   labelling -- drei centres the whole button on the anchor point. */
+.hotspot-label {
+  position: absolute;
+  left: 100%;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 999px;
+  padding: 5px 11px;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.hotspot:hover .hotspot-label,
+.hotspot:focus-visible .hotspot-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.hotspot:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotspot-dot::after {
+    animation: none;
+    opacity: 0.55;
+    transform: scale(1.2);
+  }
+}
+
+/* Inside a screen focus the room's own readouts would sit on top of the
+   desktop they no longer describe, so they fade out rather than the desktop
+   working around them. */
+.hud-corner {
+  transition: opacity 300ms ease;
+}
+
+.hud.is-inside .top-left,
+.hud.is-inside .top-right,
+.hud.is-inside .bottom-left,
+.hud.is-inside .bottom-right {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The device overlay, macOS or iOS. The rig fits SCREENS[kind].frame to the
+   viewport, so at rest the glass sits exactly where .device-glass is centred
+   -- no projection maths, just matching CSS to the box the camera is already
+   framing. Sits above the hotspots (10) and below the HUD (20).
+
+   The container itself never fades. Both surfaces inside it key off the same
+   moment -- the rig reporting it has come to rest on the glass -- so the room
+   flies past at full light for the whole dive, and only once the camera has
+   stopped does it dim and hand over to the device. Going the other way the two
+   leave together, on the click rather than on a camera that has yet to move. */
+.device {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.device.is-live {
+  pointer-events: auto;
+}
+
+/* The room dimming behind the device. The pitch keeps the resident clear of
+   the glass, so this is pure focus rather than concealment -- it comes up with
+   the screen once the camera has stopped and stays, at every viewport shape,
+   rather than lifting once the screen is looked at. */
+.device-veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 4, 10, 0.94);
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+/* Shorter going in than coming out, because the way out is what this mirrors
+   and a mirror swaps which end of the camera's move the fade sits against. */
+.device.is-open.is-live .device-veil {
+  opacity: 0.5;
+  transition-duration: 260ms;
+}
+
+/* Sized off SCREENS[kind].fill and the glass's own aspect (--glass-fill /
+   --glass-aspect, set from SCREENS[kind] in DeviceScreen.tsx) rather than an
+   aspect-ratio plus a width and a max-height -- those two clamp independently
+   and silently drift out of ratio the moment one of them, not the other, is
+   what binds. */
+.device-glass {
+  position: relative;
+  width: min(calc(var(--glass-fill) * 100vw), calc(var(--glass-fill) * 100vh * var(--glass-aspect)));
+  aspect-ratio: var(--glass-aspect);
+  overflow: hidden;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 6px rgba(8, 6, 12, 0.55), 0 40px 90px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: default;
+  /* Hidden for the whole dive so the pan itself stays watchable, then brought
+     up on the rig's arrival call, once the camera has stopped and the glass is
+     sitting exactly where this panel is centred.
+
+     The delay belongs to leaving only: going out, the device holds for a beat
+     while the camera is already pulling back, then dissolves. Coming in there
+     is nothing left to wait for -- the wait was the pan -- so the way in
+     overrides the delay away. */
+  opacity: 0;
+  transition: opacity 260ms ease 120ms;
+  /* Every dimension below this point is in cqw -- a percentage of the panel's
+     own width -- so the chrome shrinks and grows with the glass instead of
+     overflowing it at phone width or going lost in it at desktop width. The
+     iOS panel is portrait, so its cqw is that same narrow axis -- the right
+     one for phone chrome to scale off. */
+  container-type: inline-size;
+}
+
+/* Gated on is-open too, not is-live alone -- a plain look focus (the fire)
+   can also arrive, and the device has no business waking up behind it. */
+.device.is-open.is-live .device-glass {
+  opacity: 1;
+  transition-delay: 0ms;
+}
+
+.mac-menubar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2.1cqw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.12cqw;
+  background: rgba(20, 18, 26, 0.4);
+  backdrop-filter: blur(18px);
+  font-size: 1cqw;
+}
+
+.mac-menubar svg {
+  /* The viewBox keeps each glyph's own ratio; only the width is set. */
+  width: 1.1cqw;
+  height: auto;
+}
+
+.mac-menu-left,
+.mac-menu-right {
+  display: flex;
+  align-items: center;
+  gap: 1.12cqw;
+}
+
+.mac-apple {
+  display: flex;
+  opacity: 0.95;
+}
+
+.mac-menu-app {
+  font-weight: 700;
+}
+
+.mac-menu-item {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.mac-menu-right {
+  font-variant-numeric: tabular-nums;
+}
+
+.mac-menu-date {
+  opacity: 0.9;
+}
+
+.mac-menu-time {
+  font-weight: 600;
+}
+
+.mac-icons {
+  position: absolute;
+  top: 3.37cqw;
+  right: 1.28cqw;
+  /* Bounded so a folder with more documents than fit in one column wraps into
+     the next one instead of running off the glass. wrap-reverse puts the first
+     column against the right edge, the way macOS fills its desktop, so new
+     columns grow inwards rather than off screen. */
+  bottom: 5.6cqw;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  align-items: center;
+  gap: 1.44cqw;
+}
+
+.mac-icon {
+  display: flex;
+  width: 5.1cqw;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.32cqw;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.mac-icon:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.mac-icon-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.4cqw;
+  height: 3.4cqw;
+}
+
+.mac-icon-glyph svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.mac-icon-label {
+  font-size: 0.88cqw;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.mac-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 0.8cqw;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 0.56cqw;
+  padding: 0.48cqw 0.64cqw;
+  border-radius: 1.28cqw;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.mac-dock-tile {
+  position: relative;
+  width: 3.05cqw;
+  height: 3.05cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.72cqw;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transform-origin: bottom center;
+  /* Bottom-anchored so the tile grows toward the pointer rather than into its
+     neighbours -- macOS magnifies the row either side of the pointer too, but
+     that needs layout math this overlay has no reason to carry. */
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.4, 1.3);
+}
+
+.mac-dock-tile:hover {
+  transform: translateY(-0.8cqw) scale(1.35);
+}
+
+.mac-dock-tile svg {
+  width: 74%;
+  height: 74%;
+}
+
+.mac-dock-dot {
+  position: absolute;
+  bottom: -0.4cqw;
+  width: 0.32cqw;
+  height: 0.32cqw;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.mac-dock-divider {
+  align-self: stretch;
+  width: 1px;
+  margin: 0.32cqw 0.16cqw;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.mac-window {
+  position: absolute;
+  z-index: 1;
+  top: 5.6cqw;
+  left: 12cqw;
+  right: 12cqw;
+  bottom: 8cqw;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.9cqw;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1.2cqw 3.2cqw rgba(0, 0, 0, 0.45);
+}
+
+.mac-window-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: 2.4cqw;
+  padding: 0 1cqw;
+  background: linear-gradient(180deg, #f3f3f3, #dcdcdc);
+  border-bottom: 1px solid #c7ccd1;
+}
+
+.mac-window-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5cqw;
+}
+
+.mac-window-dot {
+  width: 0.9cqw;
+  height: 0.9cqw;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: #d3d3d3;
+}
+
+.mac-window-dot-close {
+  background: #ff5f57;
+  cursor: pointer;
+}
+
+.mac-window-dot-min {
+  background: #febc2e;
+}
+
+.mac-window-dot-max {
+  background: #28c840;
+}
+
+.mac-window-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.95cqw;
+  font-weight: 600;
+  color: #3a3a3a;
+}
+
+.mac-window-body {
+  flex: 1;
+  background: #fff;
+}
+
+.mac-window-body iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* The iOS home screen. Same cqw-off-the-panel-width approach as the mac
+   chrome above; the panel itself is portrait here, so cqw is already the
+   narrow axis, which is the one phone chrome wants to scale off. */
+.ios-home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 2.6cqw 4cqw 3cqw;
+  color: #fff;
+}
+
+.ios-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1cqw 0 2.4cqw;
+  font-size: 3.6cqw;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ios-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+}
+
+.ios-status-icons svg {
+  width: 4cqw;
+  height: auto;
+  display: block;
+}
+
+/* Ascending bar heights read as signal strength without a fourth icon. */
+.ios-cellular {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6cqw;
+  height: 3cqw;
+}
+
+.ios-cellular-bar {
+  width: 1cqw;
+  border-radius: 0.3cqw;
+  background: #fff;
+}
+
+.ios-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4.6cqw 3cqw;
+  margin-top: 1.4cqw;
+}
+
+/* Spans every column so it sits across the grid's own top row rather than in
+   one cell -- the widget's whole reason to exist is being the one part of
+   this screen that isn't a generic app tile. */
+.ios-widget {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 3.2cqw;
+  padding: 3.6cqw;
+  border-radius: 5.2cqw;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.ios-widget-glyph {
+  flex: none;
+  width: 12cqw;
+  height: 12cqw;
+}
+
+.ios-widget-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6cqw;
+}
+
+.ios-widget-temp {
+  margin: 0;
+  font-size: 7.4cqw;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.ios-widget-label {
+  margin: 0;
+  font-size: 3.2cqw;
+  opacity: 0.85;
+}
+
+.ios-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4cqw;
+}
+
+.ios-app-glyph {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.ios-app-glyph svg {
+  width: 62%;
+  height: 62%;
+}
+
+.ios-app-label {
+  font-size: 2.7cqw;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.ios-dots {
+  display: flex;
+  justify-content: center;
+  gap: 1.8cqw;
+  margin: 3.2cqw 0 2.2cqw;
+}
+
+.ios-dot {
+  width: 1.6cqw;
+  height: 1.6cqw;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.ios-dot.is-active {
+  background: #fff;
+}
+
+.ios-dock {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 2.6cqw 3.4cqw;
+  border-radius: 7.4cqw;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.ios-dock-tile {
+  width: 13.4cqw;
+  height: 13.4cqw;
+  border-radius: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.ios-dock-tile svg {
+  width: 62%;
+  height: 62%;
+}
+
+.ios-home-indicator {
+  align-self: center;
+  width: 30cqw;
+  height: 1cqw;
+  margin-top: 2.4cqw;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
 }

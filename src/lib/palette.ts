@@ -26,6 +26,11 @@ export const COTTAGE = {
   ember: '#ff8a3d',
   lampLight: '#ffb26b',
   screen: '#9fd6ff',
+  skin: '#d9a179',
+  hair: '#84543a',
+  shirt: '#3e3d68',
+  trousers: '#2f3050',
+  boot: '#b0763c',
 } as const
 
 type MoodBase = Omit<Mood, 'kind' | 'phase' | 'interiorIntensity'>

@@ -40,6 +40,40 @@ Latitude, longitude and the clock also feed a NOAA solar-position calculation
 ([`src/lib/sun.js`](src/lib/sun.js)) that aims the key light, so the shadows
 point where the real sun is.
 
+## Moving the camera
+
+The camera is locked to one angle -- the cutaway is authored for it, and swinging
+round shows the backs of two solid walls -- so the only movements are zoom and
+framing.
+
+- The `+` / `-` control on the right edge zooms. Steps are multiples of whatever
+  fits the current viewport, so `100%` frames the cottage on a phone and on a
+  desktop alike. The scroll wheel does nothing.
+- Clicking something in the room frames it close up: the laptop screen and the
+  fire are the two targets today. `Back to the room`, `Esc`, or a click on empty
+  space pulls back out.
+
+New targets are a wrapper, not a mechanism. Put a `Focusable` where the camera
+should aim -- its origin is what ends up centred:
+
+```tsx
+<Focusable label="the kettle" zoom={3.4} position={[0.2, 1.1, 0]}>
+  ...
+</Focusable>
+```
+
+## Documents on the desktop
+
+Any PDF dropped into the project's `documents/` folder shows up as an icon on
+the laptop's Mac desktop, labelled with the filename minus its extension --
+a build-time glob in [`src/lib/documents.ts`](src/lib/documents.ts) picks it
+up, so dropping the file in is the whole authoring step, with no manifest to
+keep in sync. Clicking the icon opens the PDF in a Preview-style window right
+there on the screen, rendered by the browser's own built-in PDF viewer. The
+two samples that ship with the repo, `Weather Report.pdf` and
+`Cottage Notes.pdf`, are just placeholders -- drop in your own and they take
+their place.
+
 ## Previewing a condition
 
 Waiting for a thunderstorm is a bad debug loop. In dev there is a switcher on
@@ -81,6 +115,43 @@ they keep working unchanged. Interior lamps come from the scene's own point
 lights; if your model has its own emissive materials, expect to retune the
 night intensities in [`src/lib/palette.js`](src/lib/palette.js).
 
+## Using a downloaded character
+
+Someone sits at the desk, typing, breathing and glancing around. The figure
+follows Virtual Cottage's own idiom for people: one soft mass for the sweater,
+an oversized rounded head of hair sitting straight on it with no neck, sleeves
+tapering into mitts, and no face at all -- the camera only ever sees a back.
+Capsules and spheres rather than the boxes the rest of the room is made of,
+because a drawn sleeve has no edges to catch light. Like the cottage, the figure
+is procedural so the project runs with no assets, and like the cottage it can be
+replaced -- with a rigged character from a site such as
+[free3d](https://free3d.com), or anything exported from Blender:
+
+1. Download the character and check its licence covers what you are doing with
+   it. Most free3d models are personal-use only.
+2. Open it in Blender and export glTF 2.0 (`.glb`), **+Y up**. `.obj`, `.fbx`
+   and `.max` will not load in the browser.
+3. Drop it in `public/models/` and point the env vars at it:
+
+```bash
+cat >> .env.local <<'ENV'
+VITE_PERSON_MODEL=/models/person.glb
+VITE_PERSON_SCALE=1
+VITE_PERSON_TURN=180
+VITE_PERSON_LIFT=0
+ENV
+```
+
+`TURN` is degrees about Y -- the procedural figure faces the desk at `-Z`, and
+most exported characters face `+Z`. `LIFT` is measured from the chair seat, so
+a character authored standing wants about `-0.49` to put it back on the floor.
+A figure roughly 1.7 units tall matches the room.
+
+The pose is yours to solve: the seated animation in
+[`Person.tsx`](src/scene/Person.tsx) drives named groups of the procedural
+figure, and an imported model is rendered as-is. A model authored standing will
+stand, wherever `LIFT` puts it.
+
 ## Layout
 
 ```
@@ -95,6 +166,11 @@ src/
   scene/Panel.tsx         the flat-shaded box every solid is made of
   scene/Cottage.tsx       shell, roof, gable, chimney, platform
   scene/Furniture.tsx     the room's furniture
+  scene/Person.tsx        the procedural resident, seated at the desk
+  scene/CharacterModel.tsx  optional glTF character swap
+  scene/Focusable.tsx     wraps anything the camera can be sent to
+  scene/focus.ts          focus request type and context
+  scene/zoom.ts           zoom limits shared by the camera and the HUD
   scene/Precipitation.tsx instanced rain and snow
   scene/Lighting.tsx      sun, fill, lightning
   scene/Scene.tsx         canvas, fog, camera

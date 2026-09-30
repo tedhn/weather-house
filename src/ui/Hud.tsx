@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { localClock } from '../lib/clock'
 import { searchPlaces } from '../lib/openMeteo'
+import type { FocusRequest } from '../scene/focus'
+import { SCREENS } from '../scene/screen'
+import { ZOOM_MAX, ZOOM_MIN } from '../scene/zoom'
 import type { Coordinates, Place, Weather } from '../types'
-
-function localClock(weather: Weather | null): string {
-  if (!weather) return '--:--'
-  const shifted = new Date(Date.now() + weather.utcOffsetSeconds * 1000)
-  return shifted.toISOString().slice(11, 16)
-}
 
 function LocationSearch({ onPick }: { onPick: (place: Place) => void }) {
   const [open, setOpen] = useState(false)
@@ -84,18 +82,63 @@ function LocationSearch({ onPick }: { onPick: (place: Place) => void }) {
   )
 }
 
+// Zoom lives on screen rather than on the wheel: the page never scrolls, and a
+// visible control is the only way a viewer knows the diorama zooms at all.
+function ZoomControl({ zoom, onZoom }: { zoom: number; onZoom: (direction: 1 | -1) => void }) {
+  return (
+    <div className="zoom">
+      <button
+        type="button"
+        className="zoom-button"
+        aria-label="Zoom in"
+        disabled={zoom >= ZOOM_MAX - 0.001}
+        onClick={() => onZoom(1)}
+      >
+        +
+      </button>
+      <span className="zoom-level">{Math.round(zoom * 100)}%</span>
+      <button
+        type="button"
+        className="zoom-button"
+        aria-label="Zoom out"
+        disabled={zoom <= ZOOM_MIN + 0.001}
+        onClick={() => onZoom(-1)}
+      >
+        −
+      </button>
+    </div>
+  )
+}
+
 export interface HudProps {
   weather: Weather | null
   location: Coordinates | null
   error: Error | null
   loading: boolean
+  zoom: number
+  onZoom: (direction: 1 | -1) => void
+  focus: FocusRequest | null
+  when: Date
+  onClearFocus: () => void
   onPick: (place: Place) => void
   onRefresh: () => void
 }
 
-export function Hud({ weather, location, error, loading, onPick, onRefresh }: HudProps) {
+export function Hud({
+  weather,
+  location,
+  error,
+  loading,
+  zoom,
+  onZoom,
+  focus,
+  when,
+  onClearFocus,
+  onPick,
+  onRefresh,
+}: HudProps) {
   return (
-    <div className="hud">
+    <div className={`hud${focus?.kind === 'screen' ? ' is-inside' : ''}`}>
       <div className="hud-corner top-left">
         <p className="eyebrow">
           {location?.name || 'Locating…'}
@@ -111,8 +154,18 @@ export function Hud({ weather, location, error, loading, onPick, onRefresh }: Hu
       </div>
 
       <div className="hud-corner top-right">
-        <p className="clock">{localClock(weather)}</p>
+        <p className="clock">{localClock(weather, when)}</p>
         <p className="eyebrow">{weather?.isDay ? 'daylight' : 'after dark'}</p>
+      </div>
+
+      <div className="hud-corner mid-right">
+        {focus ? (
+          <button type="button" className="chip" onClick={onClearFocus}>
+            {focus.kind === 'screen' ? SCREENS[focus.screen].exitLabel : 'Back to the room'}
+          </button>
+        ) : (
+          <ZoomControl zoom={zoom} onZoom={onZoom} />
+        )}
       </div>
 
       <div className="hud-corner bottom-left">

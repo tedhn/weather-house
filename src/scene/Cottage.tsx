@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { RoundedBoxGeometry } from '@react-three/drei'
 import * as THREE from 'three'
 import { COTTAGE } from '../lib/palette'
 import type { Mood } from '../types'
@@ -23,7 +24,7 @@ function Window({ position, width = 1.1, height = 1.2, glow }: WindowProps) {
   return (
     <group position={position}>
       <mesh>
-        <boxGeometry args={[width, height, 0.05]} />
+        <RoundedBoxGeometry args={[width, height, 0.05]} radius={0.017} smoothness={2} bevelSegments={2} />
         <meshStandardMaterial
           color={COTTAGE.glass}
           emissive={glow ? COTTAGE.lampLight : COTTAGE.glass}
@@ -41,6 +42,9 @@ function Window({ position, width = 1.1, height = 1.2, glow }: WindowProps) {
   )
 }
 
+// Matches the panel bevel so the roof end does not read sharper than the walls.
+const GABLE_BEVEL = 0.04
+
 function Gable() {
   const shape = useMemo(() => {
     const gable = new THREE.Shape()
@@ -54,7 +58,20 @@ function Gable() {
   return (
     <group position={[-HALF_W, WALL_TOP, 0]} rotation={[0, -Math.PI / 2, 0]}>
       <mesh castShadow receiveShadow>
-        <extrudeGeometry args={[shape, { depth: WALL, bevelEnabled: false }]} />
+        {/* The bevel grows the wedge outward by its size, so the extrusion is
+            shortened by the same amount on both ends to keep WALL thickness. */}
+        <extrudeGeometry
+          args={[
+            shape,
+            {
+              depth: WALL - GABLE_BEVEL * 2,
+              bevelEnabled: true,
+              bevelThickness: GABLE_BEVEL,
+              bevelSize: GABLE_BEVEL,
+              bevelSegments: 2,
+            },
+          ]}
+        />
         <meshStandardMaterial color={COTTAGE.wallUpper} flatShading roughness={0.95} />
       </mesh>
     </group>

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { useViewportScreen } from '../scene/screen'
 import { CONDITION_KINDS } from '../lib/openMeteo'
 import type { ConditionKind, Weather } from '../types'
 
@@ -48,9 +50,29 @@ export interface WeatherSwitcherProps {
 export function WeatherSwitcher({ value, onChange }: WeatherSwitcherProps) {
   const set = (patch: Partial<Override>) => onChange({ ...value, ...patch })
 
+  // A phone has no room to spare: open, the panel covers the diorama, which is
+  // the whole picture. So it starts collapsed to its own title there and opens
+  // as a sheet along the bottom edge. A wide window starts open, where the
+  // panel costs nothing. Resized across the breakpoint it re-reads the default
+  // rather than carrying a phone's collapsed panel onto a desktop.
+  const screen = useViewportScreen()
+  const [open, setOpen] = useState(screen === 'mac')
+  const [sizedFor, setSizedFor] = useState(screen)
+  if (screen !== sizedFor) {
+    setSizedFor(screen)
+    setOpen(screen === 'mac')
+  }
+
   return (
-    <aside className="switcher">
-      <p className="switcher-title">Preview</p>
+    <aside className={open ? 'switcher is-open' : 'switcher'}>
+      <button
+        type="button"
+        className="switcher-title"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        Preview <strong>{value.kind ?? 'live'}</strong>
+      </button>
 
       <div className="switcher-group">
         <button
