@@ -15,7 +15,11 @@ import {
   WifiIcon,
 } from './glyphs'
 
-export type MacScreenProps = DeviceScreenSharedProps
+export interface MacScreenProps extends DeviceScreenSharedProps {
+  /** The laptop, or the monitor in the Blender room -- same desktop, the
+      glass it lands on is a different shape. */
+  kind: 'mac' | 'monitor'
+}
 
 function AppleMark() {
   return (
@@ -132,7 +136,7 @@ const DOCK_APPS: DockApp[] = [
   { id: 'settings', title: 'System Settings', gradient: 'linear-gradient(160deg, #e3e6ea, #9099a6)', Icon: SettingsGlyph },
 ]
 
-export function MacScreen({ open, live, mood, weather, when, onExit }: MacScreenProps) {
+export function MacScreen({ kind, open, live, mood, weather, when, onExit }: MacScreenProps) {
   const [openDoc, setOpenDoc] = useState<DeskDocument | null>(null)
 
   // Leaving the laptop should not leave a window open behind the camera -- the
@@ -162,7 +166,7 @@ export function MacScreen({ open, live, mood, weather, when, onExit }: MacScreen
   }, [openDoc])
 
   return (
-    <DeviceScreen kind="mac" open={open} live={live} mood={mood} onExit={onExit}>
+    <DeviceScreen kind={kind} open={open} live={live} mood={mood} onExit={onExit}>
       <div className="mac-menubar">
         <div className="mac-menu-left">
           <span className="mac-apple">

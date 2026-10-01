@@ -82,3 +82,11 @@ export function moodFor(weather: Weather | null | undefined): Mood {
     interiorIntensity: INTERIOR[phase],
   }
 }
+
+// Phase alone cannot pick a text colour: a rainy day is darker than a clear
+// night is bright. Judged on the sky's midpoint luminance instead.
+export function isLightSky(mood: Mood): boolean {
+  const channel = (hex: string, at: number) => parseInt(hex.slice(at, at + 2), 16)
+  const mid = (at: number) => (channel(mood.top, at) + channel(mood.bottom, at)) / 2
+  return 0.2126 * mid(1) + 0.7152 * mid(3) + 0.0722 * mid(5) > 150
+}

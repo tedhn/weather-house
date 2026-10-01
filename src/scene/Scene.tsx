@@ -223,6 +223,8 @@ export interface SceneProps {
   /** Fires once the rig has come to rest on a focus, and again the moment it
       leaves one. Whatever wakes on it plays after the move, not across it. */
   onArrive?: (arrived: boolean) => void
+  /** Fires once the cottage has finished loading and is in the scene. */
+  onReady?: (() => void) | undefined
 }
 
 export function Scene({
@@ -236,6 +238,7 @@ export function Scene({
   onFocus,
   drift = true,
   onArrive,
+  onReady,
 }: SceneProps) {
   // Snow settles on the platform in proportion to how hard it is coming down.
   const snowCover = weather?.kind === 'snow' ? Math.min(1, 0.35 + weather.intensity * 0.6) : 0
@@ -283,6 +286,8 @@ export function Scene({
               mood={mood}
               snowCover={snowCover}
               smoke={weather ? weather.temperature < 22 : true}
+              utcOffsetSeconds={weather?.utcOffsetSeconds}
+              onReady={onReady}
             />
             <Precipitation weather={weather} />
             <ContactShadows position={[0, -2.1, 0]} opacity={0.5} scale={14} blur={2.4} far={5} resolution={1024} />

@@ -47,6 +47,86 @@ body,
   background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(12, 7, 18, 0.55) 100%);
 }
 
+/* Covers the canvas until the room model is in, so the first frame anyone
+   sees is the finished room rather than an empty plinth. */
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: rgba(255, 240, 225, 0.8);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  border-radius: 0;
+}
+
+/* On the way out the whole screen pulls back into a card and then tips over
+   and falls out of the frame, the room standing behind it the whole time.
+   Both moves wind up before they go -- the overshoot in the curve -- so the
+   card reads as a thing with weight rather than a fade. */
+.loading--done {
+  pointer-events: none;
+  animation: loading-out 1.3s both;
+}
+
+@keyframes loading-out {
+  0% {
+    transform: none;
+    border-radius: 0;
+    animation-timing-function: cubic-bezier(0.6, -0.28, 0.735, 0.045);
+  }
+
+  45% {
+    transform: scale(0.5);
+    border-radius: 48px;
+    animation-timing-function: cubic-bezier(0.6, -0.28, 0.735, 0.045);
+  }
+
+  100% {
+    transform: perspective(1000px) translateY(160vh) scale(0.5) rotateX(45deg) rotateY(-35deg);
+    border-radius: 48px;
+    visibility: hidden;
+  }
+}
+
+.loading[data-sky='light'] {
+  color: rgba(40, 30, 45, 0.75);
+}
+
+.loading__room {
+  width: min(220px, 50vw);
+  height: auto;
+  filter: drop-shadow(0 18px 24px rgba(12, 7, 18, 0.35));
+  animation: loading-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes loading-bob {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__room {
+    animation: none;
+  }
+
+  .loading--done {
+    animation: loading-fade 400ms ease both;
+  }
+}
+
+@keyframes loading-fade {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
 .hud {
   position: absolute;
   inset: 0;
@@ -596,6 +676,47 @@ dd {
    working around them. */
 .hud-corner {
   transition: opacity 300ms ease;
+}
+
+/* The readouts come in once the room has filled, each sliding in from its own
+   edge. Filled backwards only, so before its delay a corner is hidden and once
+   played it hands opacity back to the rules around it -- a forwards fill would
+   pin it at 1 and stop .is-inside from ever fading it. */
+.app.is-ready :is(.top-left, .top-right, .bottom-left, .bottom-right) {
+  animation: hud-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.app.is-ready .top-left {
+  --hud-from: 0 -10px;
+  animation-delay: 1600ms;
+}
+
+.app.is-ready .top-right {
+  --hud-from: 0 -10px;
+  animation-delay: 1700ms;
+}
+
+.app.is-ready .bottom-left {
+  --hud-from: 0 10px;
+  animation-delay: 1850ms;
+}
+
+.app.is-ready .bottom-right {
+  --hud-from: 0 10px;
+  animation-delay: 1950ms;
+}
+
+@keyframes hud-in {
+  from {
+    opacity: 0;
+    translate: var(--hud-from);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app.is-ready .hud-corner {
+    animation: none;
+  }
 }
 
 .hud.is-inside .top-left,

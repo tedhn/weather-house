@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Scene } from './scene/Scene'
-import type { FocusRequest } from './scene/focus'
+import type { FocusRequest, ScreenKind } from './scene/focus'
 import { useViewportScreen } from './scene/screen'
 import { ZOOM_STEP, clampZoom } from './scene/zoom'
+import type { DeviceScreenSharedProps } from './ui/DeviceScreen'
 import { Hud } from './ui/Hud'
 import { IosScreen } from './ui/IosScreen'
 import { MacScreen } from './ui/MacScreen'
@@ -12,7 +13,7 @@ import {
   WeatherSwitcher,
   type Override,
 } from './ui/WeatherSwitcher'
-import { moodFor } from './lib/palette'
+import { isLightSky, moodFor } from './lib/palette'
 import { useInitialLocation, useWeather } from './hooks/useWeather'
 import './index.css'
 
@@ -25,14 +26,12 @@ export default function App() {
   const mood = useMemo(() => moodFor(weather), [weather])
 
   const screen = useViewportScreen()
-  // Picked rather than branched in the tree, so both overlays are handed one
-  // prop list. A prop added to DeviceScreenSharedProps then cannot reach one
-  // device and miss the other.
-  const Device = screen === 'ios' ? IosScreen : MacScreen
 
   const [zoom, setZoom] = useState(1)
   const [focus, setFocus] = useState<FocusRequest | null>(null)
   const [arrived, setArrived] = useState(false)
+  const [ready, setReady] = useState(false)
+  const markReady = useCallback(() => setReady(true), [])
 
   // The device that swapped out from under a close-up is gone -- its Object3D
   // unmounted with the old geometry -- so a focus left pointing at it would
@@ -44,6 +43,14 @@ export default function App() {
     setShownOn(screen)
     setFocus(null)
   }
+
+  // Which surface the overlay is dressed as. It follows whatever screen the
+  // camera last went into and holds it after, so leaving the monitor fades out
+  // the monitor-shaped desktop rather than snapping to the laptop's mid-fade.
+  const [surface, setSurface] = useState<ScreenKind>(screen)
+  const entered = focus?.kind === 'screen' ? focus.screen : null
+  if (entered && entered !== surface) setSurface(entered)
+  if (!entered && surface !== screen && surface !== 'monitor') setSurface(screen)
 
   // Working the zoom control means you want the room back, not a nudge to a
   // close-up you are already inside.
@@ -68,8 +75,17 @@ export default function App() {
     return () => clearInterval(timer)
   }, [])
 
+  const deviceProps = {
+    open: focus?.kind === 'screen',
+    live: arrived,
+    mood,
+    weather,
+    when: now,
+    onExit: () => setFocus(null),
+  } satisfies DeviceScreenSharedProps
+
   return (
-    <div className="app">
+    <div className={ready ? 'app is-ready' : 'app'}>
       <div className="sky" style={{ background: `linear-gradient(${mood.top}, ${mood.bottom})` }} />
       <Scene
         weather={weather}
@@ -81,16 +97,16 @@ export default function App() {
         focus={focus}
         onFocus={setFocus}
         onArrive={setArrived}
+        onReady={markReady}
       />
       <div className="vignette" />
-      <Device
-        open={focus?.kind === 'screen'}
-        live={arrived}
-        mood={mood}
-        weather={weather}
-        when={now}
-        onExit={() => setFocus(null)}
-      />
+      {/* Both overlays are handed one prop list, so a prop added to
+          DeviceScreenSharedProps cannot reach one device and miss the other. */}
+      {surface === 'ios' ? (
+        <IosScreen {...deviceProps} />
+      ) : (
+        <MacScreen kind={surface} {...deviceProps} />
+      )}
       <Hud
         weather={weather}
         location={location}
@@ -104,6 +120,15 @@ export default function App() {
         onPick={setLocation}
         onRefresh={refresh}
       />
+      <div
+        className={ready ? 'loading loading--done' : 'loading'}
+        data-sky={isLightSky(mood) ? 'light' : 'dark'}
+        style={{ background: `linear-gradient(${mood.top}, ${mood.bottom})` }}
+        aria-hidden={ready}
+      >
+        <img className="loading__room" src="/models/mini-room.svg" alt="" />
+        <p>Lighting the fire…</p>
+      </div>
       {import.meta.env.DEV && <WeatherSwitcher value={override} onChange={setOverride} />}
     </div>
   )
