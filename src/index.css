@@ -681,6 +681,14 @@ dd {
   container-type: inline-size;
 }
 
+/* A glass too wide and short to work on (the monitor) gives up matching it:
+   the desktop opens out past the bezel to a share of the viewport. */
+.device-glass--viewport {
+  width: calc(var(--viewport-fill) * 100vw);
+  height: calc(var(--viewport-fill) * 100vh);
+  aspect-ratio: auto;
+}
+
 /* Gated on is-open too, not is-live alone -- a plain look focus (the fire)
    can also arrive, and the device has no business waking up behind it. */
 .device.is-open.is-live .device-glass {

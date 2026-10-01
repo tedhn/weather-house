@@ -10,6 +10,10 @@ interface FocusableBase extends Omit<ThreeElements['group'], 'ref' | 'onClick'> 
   /** Where the hotspot floats, relative to the group origin. Default sits on
       the aim point, which is usually buried inside the object it belongs to. */
   pin?: [number, number, number]
+  /** Where the hover swell grows from, relative to the group origin. Default
+      is the origin itself; something standing on a surface wants its foot, or
+      the swell pushes it down through whatever it stands on. */
+  growFrom?: [number, number, number]
   /** Off for things that already pull the eye on their own. One pip teaches the
       room is clickable; a pip on every object turns the diorama into a map. */
   hotspot?: boolean
@@ -39,7 +43,7 @@ export function Focusable(props: FocusableProps) {
   // -- a destructure that exists to strip keys, not to bind them); aimHere
   // below reads the real values back off `props`, which is what keeps the
   // compiler's link between the two alive.
-  const { label, pin = [0, 0, 0], hotspot = true, children, screen: _screen, frame: _frame, ...groupProps } =
+  const { label, pin = [0, 0, 0], growFrom = [0, 0, 0], hotspot = true, children, screen: _screen, frame: _frame, ...groupProps } =
     props
   const group = useRef<Group>(null)
   const body = useRef<Group>(null)
@@ -107,6 +111,7 @@ export function Focusable(props: FocusableProps) {
     <group ref={group} {...groupProps}>
       <group
         ref={body}
+        position={growFrom}
         onClick={(event) => {
           event.stopPropagation()
           aimHere()
@@ -117,7 +122,7 @@ export function Focusable(props: FocusableProps) {
         }}
         onPointerOut={leave}
       >
-        {children}
+        <group position={[-growFrom[0], -growFrom[1], -growFrom[2]]}>{children}</group>
       </group>
 
       {hotspot && (

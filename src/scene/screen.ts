@@ -1,5 +1,5 @@
 import { createContext, useContext, useSyncExternalStore } from 'react'
-import type { FocusFrame, ScreenKind } from './focus'
+import type { FocusFrame, ScreenKind, ViewportScreen } from './focus'
 import type { PersonPose } from './Person'
 
 // Shared between each device's own geometry (Furniture.tsx) and the DOM
@@ -22,6 +22,10 @@ export interface ScreenSpec {
       is the sliver of room left around the edges, which is what keeps the
       close-up reading as a machine on a desk rather than a web page. */
   fill: number
+  /** When set, the desktop opens out past the glass once the camera is in,
+      to this share of the viewport on both axes. For glass too wide and
+      short to work on at its own shape. */
+  viewportFill?: number
   /** The resident's pose while this device is showing -- lives on the device
       because the pose is a property of what the room displays, not a knob on
       the figure itself. */
@@ -43,7 +47,7 @@ export interface ScreenSpec {
     hand-deriving viewHeight/aspect/frame slightly wrong. */
 type ScreenAuthored = Pick<
   ScreenSpec,
-  'width' | 'height' | 'tilt' | 'pitch' | 'fill' | 'pose' | 'label' | 'exitLabel'
+  'width' | 'height' | 'tilt' | 'pitch' | 'fill' | 'viewportFill' | 'pose' | 'label' | 'exitLabel'
 >
 
 function buildScreen(authored: ScreenAuthored): ScreenSpec {
@@ -79,6 +83,23 @@ export const SCREENS: Record<ScreenKind, ScreenSpec> = {
     label: 'the phone',
     exitLabel: 'Leave the phone',
   }),
+  // The monitor in the Blender room. Read off the Screen object in
+  // public/models/cozy_room.blend: an upright 1.2 x 0.5 panel. The resident
+  // sits right in front of it, but the overlay covers the glass once the rig
+  // settles, so the pitch only has to keep the head out of the way of the
+  // swing in. At 2.5:1 the glass leaves the desktop a letterbox, so the
+  // desktop opens out to most of the viewport instead.
+  monitor: buildScreen({
+    width: 1.2,
+    height: 0.5,
+    tilt: 0,
+    pitch: 0.3,
+    fill: 0.86,
+    viewportFill: 0.9,
+    pose: 'typing',
+    label: 'the monitor',
+    exitLabel: 'Leave the desktop',
+  }),
 }
 
 /** Mirrors the `@media (max-width: 620px)` breakpoint in index.css -- the room
@@ -104,22 +125,22 @@ function subscribe(callback: () => void): () => void {
   return () => media.removeEventListener('change', callback)
 }
 
-function snapshot(): ScreenKind {
+function snapshot(): ViewportScreen {
   return phoneQuery().matches ? 'ios' : 'mac'
 }
 
 /** The one place width turns into a device. Everything downstream reads a
-    ScreenKind, never innerWidth, so a third breakpoint is a change here and
+    ViewportScreen, never innerWidth, so a third breakpoint is a change here and
     nowhere else. */
-export function useViewportScreen(): ScreenKind {
+export function useViewportScreen(): ViewportScreen {
   return useSyncExternalStore(subscribe, snapshot)
 }
 
 // R3F's Canvas runs its own reconciler, separate from the DOM tree App.tsx
 // renders into -- a context provided above the Canvas does not reach inside
 // it. This provider has to sit inside the Canvas, next to FocusContext.
-export const ScreenContext = createContext<ScreenKind>('mac')
+export const ScreenContext = createContext<ViewportScreen>('mac')
 
-export function useScreenKind(): ScreenKind {
+export function useScreenKind(): ViewportScreen {
   return useContext(ScreenContext)
 }

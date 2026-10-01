@@ -10,8 +10,8 @@ import {
   type FocusControls,
   type FocusFrame,
   type FocusRequest,
-  type ScreenKind,
   type SetFocus,
+  type ViewportScreen,
 } from './focus'
 import { Lighting } from './Lighting'
 import { Precipitation } from './Precipitation'
@@ -213,7 +213,7 @@ export interface SceneProps {
   /** Which device the desk holds. Read by useViewportScreen in App.tsx and
       passed down rather than read again in here, so the whole tree agrees on
       one viewport sample per render. */
-  screen?: ScreenKind
+  screen?: ViewportScreen
   /** Multiple of the fitted zoom, driven by the HUD control. */
   zoom?: number
   /** What the camera is framing close up, or null for the whole room. */

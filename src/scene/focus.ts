@@ -4,10 +4,14 @@ import type { Object3D } from 'three'
 /** The world-space box, in cottage units, the camera has to fit on screen. */
 export type FocusFrame = [width: number, height: number]
 
-/** Which desktop the surface shows. Keyed rather than boolean so a new device
-    is a new member of this union and a new SCREENS entry (screen.ts), not a
-    scattered width check. */
-export type ScreenKind = 'mac' | 'ios'
+/** The device the viewport width puts on the desk (screen.ts). Keyed rather
+    than boolean so a new breakpoint is a new member of this union and a new
+    SCREENS entry, not a scattered width check. */
+export type ViewportScreen = 'mac' | 'ios'
+
+/** Every surface the camera can go inside: the viewport's own device, plus
+    the monitor in the Blender room, which stands there at every width. */
+export type ScreenKind = ViewportScreen | 'monitor'
 
 interface Framed {
   /** Carried as an object rather than a point so the rig keeps following it

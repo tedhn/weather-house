@@ -7,7 +7,7 @@ import { Panel, type Vec3 } from './Panel'
 import { CharacterModel } from './CharacterModel'
 import { PHONE_GRIP } from './Person'
 import { Focusable } from './Focusable'
-import type { ScreenKind } from './focus'
+import type { ViewportScreen } from './focus'
 import { HALF_D, HALF_W } from './dims'
 import { SCREENS, useScreenKind } from './screen'
 
@@ -239,7 +239,7 @@ const PHONE_POSITION: Vec3 = [
 // and which frame it belongs to -- the desk for a laptop, the resident for
 // something they are holding.
 const DESK_DEVICES: Record<
-  ScreenKind,
+  ViewportScreen,
   {
     position: Vec3
     rotation: Vec3

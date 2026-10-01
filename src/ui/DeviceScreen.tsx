@@ -57,6 +57,7 @@ export function DeviceScreen({ kind, open, live, mood, onExit, children }: Devic
   const dims = {
     '--glass-fill': spec.fill,
     '--glass-aspect': spec.aspect,
+    '--viewport-fill': spec.viewportFill,
     background: wallpaper,
   } as CSSProperties
 
@@ -67,7 +68,9 @@ export function DeviceScreen({ kind, open, live, mood, onExit, children }: Devic
           settled on the screen's own front. */}
       <div className="device-veil" onClick={() => live && onExit()} />
 
-      <div className="device-glass" style={dims} onClick={(event) => event.stopPropagation()}>
+      <div
+        className={`device-glass${spec.viewportFill ? ' device-glass--viewport' : ''}`}
+        style={dims} onClick={(event) => event.stopPropagation()}>
         {children}
       </div>
     </div>
