@@ -853,13 +853,21 @@ dd {
   background: rgba(255, 255, 255, 0.18);
 }
 
+/* Sized off the page, not the desktop: top and bottom fix the height, and
+   the width follows from the US Letter ratio every PDF in documents/ uses.
+   content-box makes aspect-ratio measure the area under the title bar (the
+   bar sits in the top padding), so the body is exactly one page. */
 .mac-window {
   position: absolute;
   z-index: 1;
   top: 5.6cqw;
-  left: 12cqw;
-  right: 12cqw;
   bottom: 8cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: content-box;
+  padding-top: 2.4cqw;
+  aspect-ratio: 612 / 792;
+  max-width: 76cqw;
   display: flex;
   flex-direction: column;
   border-radius: 0.9cqw;
@@ -869,7 +877,10 @@ dd {
 }
 
 .mac-window-bar {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   flex: none;

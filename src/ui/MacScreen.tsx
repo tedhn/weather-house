@@ -106,7 +106,7 @@ function PdfWindow({ doc, onClose }: { doc: DeskDocument; onClose: () => void })
         <span className="mac-window-title">{doc.name}</span>
       </div>
       <div className="mac-window-body">
-        <iframe src={`${doc.url}#toolbar=0&navpanes=0&view=FitH`} title={doc.name} />
+        <iframe src={`${doc.url}#toolbar=0&navpanes=0&view=Fit`} title={doc.name} />
       </div>
     </div>
   )
