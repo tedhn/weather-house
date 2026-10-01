@@ -26,7 +26,12 @@ declare global {
 // An orthographic camera has no field of view to widen, so the zoom itself has
 // to track the viewport or the cottage runs off the edge on a phone. The room
 // is a box fit like any other focus frame, just one the wide shot clamps.
-const ROOM_FRAME: FocusFrame = [8.4, 8.4 / 1.15]
+const ROOM_FRAME: FocusFrame = [7.5, 7.2]
+
+// The cottage's origin sits above its plinth, so aiming at it leaves the walls
+// crowding the top of the frame and empty floor below. Aiming a little higher
+// centres the room's silhouette instead.
+const ROOM_AIM = new THREE.Vector3(0, 0.7, 0)
 
 function zoomFor(size: { width: number; height: number }, frame: FocusFrame): number {
   return Math.min(size.width / frame[0], size.height / frame[1])
@@ -35,7 +40,7 @@ function zoomFor(size: { width: number; height: number }, frame: FocusFrame): nu
 // Where the camera sits relative to whatever it is framing, and how far that
 // stand is from the aim point -- fixed, so swinging around an object keeps
 // the same distance the room shot uses.
-const HOME = new THREE.Vector3(14, 16, 14)
+const HOME = new THREE.Vector3(14, 11, 14)
 const RANGE = HOME.length()
 
 // How close counts as at rest, measured in what the viewer can actually see:
@@ -70,7 +75,7 @@ function CameraRig({
   const { width, height } = size
 
   const roomZoom = useMemo(
-    () => Math.max(24, Math.min(110, zoomFor({ width, height }, ROOM_FRAME))),
+    () => Math.max(24, Math.min(160, zoomFor({ width, height }, ROOM_FRAME))),
     [width, height],
   )
 
@@ -94,7 +99,7 @@ function CameraRig({
   // the rig eases where it *stands* in addition to what it is looking at.
   useFrame(() => {
     if (focus) focus.object.getWorldPosition(aim.current)
-    else aim.current.set(0, 0, 0)
+    else aim.current.copy(ROOM_AIM)
     eased.current.lerp(aim.current, 0.09)
 
     if (focus?.kind === 'screen') {
@@ -247,7 +252,7 @@ export function Scene({
       // picture without the warning.
       shadows={{ type: THREE.PCFShadowMap }}
       orthographic
-      camera={{ position: [14, 16, 14], zoom: 78, near: -120, far: 240 }}
+      camera={{ position: [14, 11, 14], zoom: 78, near: -120, far: 240 }}
       gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping }}
       dpr={[1, 2]}
       // Clicking past everything in the room is how you get back out of a
