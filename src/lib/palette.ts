@@ -51,16 +51,16 @@ const MOODS: Record<ConditionKind, Record<Phase, MoodBase>> = {
     night: { top: '#1f242e', bottom: '#10131a', sun: '#6d78a0', sunIntensity: 0.36, ambient: '#414755', ambientIntensity: 0.84, fog: 0.026 },
   },
   fog: {
-    day: { top: '#cac9c4', bottom: '#a6a49f', sun: '#eceae4', sunIntensity: 1.1, ambient: '#b4b2ad', ambientIntensity: 0.9, fog: 0.055 },
-    night: { top: '#282a2e', bottom: '#181a1e', sun: '#75798c', sunIntensity: 0.3, ambient: '#52555e', ambientIntensity: 0.92, fog: 0.07 },
+    day: { top: '#cac9c4', bottom: '#a6a49f', sun: '#eceae4', sunIntensity: 1.1, ambient: '#b4b2ad', ambientIntensity: 0.9, fog: 0.03 },
+    night: { top: '#282a2e', bottom: '#181a1e', sun: '#75798c', sunIntensity: 0.3, ambient: '#52555e', ambientIntensity: 0.92, fog: 0.038 },
   },
   rain: {
     day: { top: '#657590', bottom: '#424c66', sun: '#c2cfe6', sunIntensity: 1.2, ambient: '#76849c', ambientIntensity: 0.68, fog: 0.03 },
     night: { top: '#151d2e', bottom: '#0a0e18', sun: '#5d6da8', sunIntensity: 0.32, ambient: '#3a4360', ambientIntensity: 0.84, fog: 0.038 },
   },
   snow: {
-    day: { top: '#b3c6dc', bottom: '#e8edf5', sun: '#ffffff', sunIntensity: 1.3, ambient: '#c4cfdd', ambientIntensity: 0.8, fog: 0.04 },
-    night: { top: '#24314f', bottom: '#131a2b', sun: '#a8b9f0', sunIntensity: 0.58, ambient: '#4d5980', ambientIntensity: 1.0, fog: 0.045 },
+    day: { top: '#b3c6dc', bottom: '#e8edf5', sun: '#ffffff', sunIntensity: 1.3, ambient: '#c4cfdd', ambientIntensity: 0.8, fog: 0.024 },
+    night: { top: '#24314f', bottom: '#131a2b', sun: '#a8b9f0', sunIntensity: 0.58, ambient: '#4d5980', ambientIntensity: 1.0, fog: 0.028 },
   },
   storm: {
     day: { top: '#3c4354', bottom: '#242935', sun: '#a5aec4', sunIntensity: 0.5, ambient: '#535a6e', ambientIntensity: 0.9, fog: 0.04 },

@@ -31,10 +31,11 @@ already carries. If it fails the name falls back to the browser's own time zone
 | `weather_code` | Picks a condition group (clear, cloudy, overcast, fog, rain, snow, storm), which selects the backdrop gradient and the whole light mood |
 | `is_day` | Day/night palette, and how strongly the interior lamps read |
 | `cloud_cover` | Dims the key light and lifts the ambient fill, so overcast goes flat and shadowless |
-| `precipitation` / intensity | Number of rain or snow instances |
+| Condition group | How many cloud props are out and what colour they are; fog also rolls banks of mist in around the plinth |
+| `precipitation` / intensity | Number of rain or snow instances, which are hidden wherever they would fall across the room |
 | `wind_speed_10m`, `wind_direction_10m` | Direction and lean of the falling rain; drift on snow |
 | `temperature_2m` | Chimney smoke only when it is below 22 °C |
-| Storm codes (95–99) | Random lightning flashes on the key light |
+| Storm codes (95–99) | Random lightning flashes on the key light, with a bolt drawn under a cloud behind the room |
 
 Latitude, longitude and the clock also feed a NOAA solar-position calculation
 ([`src/lib/sun.js`](src/lib/sun.js)) that aims the key light, so the shadows
@@ -115,6 +116,24 @@ they keep working unchanged. Interior lamps come from the scene's own point
 lights; if your model has its own emissive materials, expect to retune the
 night intensities in [`src/lib/palette.js`](src/lib/palette.js).
 
+## Weather props
+
+The clouds, mist, raindrop, snowflake, lightning bolt and snow cap are modelled
+in Blender too, in `public/models/weather.glb`. They are built in the room's
+space and measured off it, so the scene places them with the same scale and
+offset as `cozy_room.glb`, and the box that keeps rain and snow off the room is
+the room's own bounds. To rebuild the file after changing the room, run the
+script on top of it:
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender -b public/models/cozy_room.blend \
+    --python blender/build_weather.py -- public/models/weather.glb
+```
+
+Add `--blend PATH` after the output to also save the props as a `.blend` to
+look at. If `weather.glb` is missing or fails to load, the room still renders,
+just without weather.
+
 ## Using a downloaded character
 
 Someone sits at the desk, typing, breathing and glancing around. The figure
@@ -171,7 +190,7 @@ src/
   scene/Focusable.tsx     wraps anything the camera can be sent to
   scene/focus.ts          focus request type and context
   scene/zoom.ts           zoom limits shared by the camera and the HUD
-  scene/Precipitation.tsx instanced rain and snow
+  scene/Weather.tsx       Blender weather props: clouds, rain, snow, mist, lightning
   scene/Lighting.tsx      sun, fill, lightning
   scene/Scene.tsx         canvas, fog, camera
   scene/BlenderCottage.tsx  optional glTF swap
