@@ -2,7 +2,7 @@ import { Component, Suspense, useEffect, useMemo, type ReactNode } from 'react'
 import { useGLTF } from '@react-three/drei'
 import type { Object3D } from 'three'
 import { Cottage, type CottageProps } from './Cottage'
-import { BASE_Y } from './dims'
+import { BASE_Y, MODEL_SCALE } from './dims'
 import { Focusable } from './Focusable'
 import { SCREENS } from './screen'
 import { useRoomMotion } from './roomMotion'
@@ -12,7 +12,6 @@ import { useRoomMotion } from './roomMotion'
 // procedural cottage. Everything else -- lighting, weather, camera -- keeps
 // working, because none of it reads the cottage geometry.
 const MODEL_URL = import.meta.env.VITE_COTTAGE_MODEL ?? '/models/cozy_room.glb'
-const MODEL_SCALE = Number(import.meta.env.VITE_COTTAGE_SCALE ?? 1)
 
 // The middle of the monitor's glass in the export's own space, read off the
 // Screen object in cozy_room.blend (Blender's Z-up turned Y-up). The panel
@@ -79,7 +78,7 @@ function LoadedModel({ url, utcOffsetSeconds }: { url: string; utcOffsetSeconds:
   )
 }
 
-class ModelErrorBoundary extends Component<
+export class ModelErrorBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
   { failed: boolean }
 > {

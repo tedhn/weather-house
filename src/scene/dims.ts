@@ -11,3 +11,6 @@ export const WALL_TOP = ROOM_H
 export const RIDGE = WALL_TOP + ROOF_RISE
 // The whole diorama is lifted so the cottage sits centred on screen.
 export const BASE_Y = -0.7
+// The Blender export and the weather props built on top of it share one
+// space, so they scale together.
+export const MODEL_SCALE = Number(import.meta.env.VITE_COTTAGE_SCALE ?? 1)

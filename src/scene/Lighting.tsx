@@ -5,19 +5,17 @@ import type { DirectionalLight, AmbientLight } from 'three'
 import { sunVector } from '../lib/sun'
 import type { Mood, Weather } from '../types'
 
-interface LightningState {
+export interface LightningState {
   next: number
   value: number
   burst: number
 }
 
-// Storms get a flash instead of a rendered bolt: cheap, and it reads correctly
-// because what you notice in a real storm is the room lighting up, not the bolt.
-function useLightning(active: boolean): LightningState {
-  const state = useRef<LightningState>({ next: 2 + Math.random() * 5, value: 0, burst: 0 })
-
+// What you notice in a real storm is the room lighting up, so the flash is
+// the lights' job. Weather.tsx hangs a bolt under a cloud for as long as it
+// lasts.
+function useLightning(current: LightningState, active: boolean): void {
   useFrame((_, delta) => {
-    const current = state.current
     if (!active) {
       current.value = 0
       return
@@ -37,8 +35,6 @@ function useLightning(active: boolean): LightningState {
       current.value = 0
     }
   })
-
-  return state.current
 }
 
 export interface LightingProps {
@@ -47,15 +43,16 @@ export interface LightingProps {
   when: Date
   latitude: number
   longitude: number
+  lightning: LightningState
 }
 
-export function Lighting({ mood, weather, when, latitude, longitude }: LightingProps) {
+export function Lighting({ mood, weather, when, latitude, longitude, lightning }: LightingProps) {
   const sun = useMemo(() => sunVector(when, latitude, longitude, 26), [when, latitude, longitude])
 
   const key = useRef<DirectionalLight>(null)
   const fill = useRef<AmbientLight>(null)
   const bolt = useRef<DirectionalLight>(null)
-  const lightning = useLightning(weather?.kind === 'storm')
+  useLightning(lightning, weather?.kind === 'storm')
 
   // Thick cloud both dims the sun and spreads it, so the key light drops while
   // the ambient fill climbs.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
@@ -13,9 +13,9 @@ import {
   type SetFocus,
   type ViewportScreen,
 } from './focus'
-import { Lighting } from './Lighting'
-import { Precipitation } from './Precipitation'
+import { Lighting, type LightningState } from './Lighting'
 import { ScreenContext } from './screen'
+import { Weather as WeatherLayer } from './Weather'
 
 declare global {
   interface Window {
@@ -243,6 +243,10 @@ export function Scene({
   // Snow settles on the platform in proportion to how hard it is coming down.
   const snowCover = weather?.kind === 'snow' ? Math.min(1, 0.35 + weather.intensity * 0.6) : 0
 
+  // Lighting writes the flash and the weather props read it, so the state
+  // lives here above both.
+  const [lightning] = useState<LightningState>(() => ({ next: 2 + Math.random() * 5, value: 0, burst: 0 }))
+
   const controls = useMemo<FocusControls>(
     () => ({ focus, setFocus: onFocus ?? noFocus }),
     [focus, onFocus],
@@ -271,6 +275,7 @@ export function Scene({
         when={when}
         latitude={location?.latitude ?? 0}
         longitude={location?.longitude ?? 0}
+        lightning={lightning}
       />
 
       <FocusContext.Provider value={controls}>
@@ -289,7 +294,7 @@ export function Scene({
               utcOffsetSeconds={weather?.utcOffsetSeconds}
               onReady={onReady}
             />
-            <Precipitation weather={weather} />
+            <WeatherLayer weather={weather} snowCover={snowCover} lightning={lightning} />
             <ContactShadows position={[0, -2.1, 0]} opacity={0.5} scale={14} blur={2.4} far={5} resolution={1024} />
           </Drift>
         </ScreenContext.Provider>
